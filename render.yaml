@@ -1,10 +1,1 @@
-services:
-  - type: worker
-    name: Endocrinebot
-    env: python
-    buildCommand: "pip install -r requirements.txt"
-    startCommand: "python main.py"
 
-git add render.yaml
-git commit -m "Add render.yaml for Render deployment"
-git push origin main
