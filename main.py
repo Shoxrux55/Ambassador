@@ -207,7 +207,7 @@ def contact(message):
 
         # Xabar va inline tugmalar
         inline_markup = telebot.types.InlineKeyboardMarkup()
-        inline_markup.add(telebot.types.InlineKeyboardButton(text="Sovg'angiz👇", callback data='gift'))
+        inline_markup.add(telebot.types.InlineKeyboardButton(text="Sovg'angiz👇", callback_data='gift'))
 
         gift_message = """Siz uchun tayyorlab qo'ygan sovg'alarimizni kutib oling🤗
 
@@ -241,7 +241,7 @@ def account_or_ref_link_handler(call):
         if call.data == 'account':
             balance = data['balance'].get(user, 0)
             markup = telebot.types.InlineKeyboardMarkup()
-            markup.add(telebot.types.InlineKeyboardButton(text=f"Balans: {balance} Ball", callback data='balance'))
+            markup.add(telebot.types.InlineKeyboardButton(text=f"Balans: {balance} Ball", callback_data='balance'))
             msg = f"Foydalanuvchi: {username}\nBalans: {balance} {TOKEN}"
             bot.send_message(call.message.chat.id, msg, reply_markup=markup)
 
@@ -281,7 +281,7 @@ def send_text(message):
             user = str(user_id)
             balance = data['balance'].get(user, 0)
             markup = telebot.types.InlineKeyboardMarkup()
-            markup.add(telebot.types.InlineKeyboardButton(text=f"Balans: {balance} Ball", callback data='balance'))
+            markup.add(telebot.types.InlineKeyboardButton(text=f"Balans: {balance} Ball", callback_data='balance'))
             msg = f"Foydalanuvchi: {message.from_user.username}\nBalans: {balance} {TOKEN}"
             bot.send_message(message.chat.id, msg, reply_markup=markup)
         if message.text == '🙌🏻 Maxsus linkim':
@@ -301,7 +301,7 @@ def send_text(message):
             return
     except Exception as e:
         bot.send_message(message.chat.id, "Bu buyruqda xatolik bor, iltimos admin xatoni tuzatishini kuting")
-        bot send_message(OWNER_ID, "Botingizda xatolik bor, uni tezda tuzating!\n Xato komandada: " + message.text + "\nXatolik: " + str(e))
+        bot.send_message(OWNER_ID, "Botingizda xatolik bor, uni tezda tuzating!\n Xato komandada: " + message.text + "\nXatolik: " + str(e))
         return
 
 @bot.message_handler(content_types=['video'])
