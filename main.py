@@ -6,9 +6,9 @@ from flask import Flask, request
 TOKEN = "Ball"
 BOT_TOKEN = "7611666697:AAH6aLkRF7jYBmvEWAHWnePLz6OEb_49VOI"
 PAYMENT_CHANNEL = "@medstone_usmle"  # Add payment channel here including the '@' sign
-OWNER_ID = 725821571  # Write owner's user id here.. get it from @MissRose_Bot by /id
+OWNER_ID = 725821571  # Write owner's user id here, get it from @MissRose_Bot by /id
 CHANNELS = ["@medstone_usmle"]  # Add channels to be checked here in the format - ["Channel 1", "Channel 2"]
-Daily_bonus = 1  # Put daily bonus amount here!
+Daily_bonus = 1  # Put daily bonus amount here
 Per_Refer = 1  # Add per refer bonus here
 
 bot = telebot.TeleBot(BOT_TOKEN)
@@ -16,16 +16,29 @@ app = Flask(__name__)
 
 ADMIN_GROUP_USERNAME = "@endocrineqatnashchi"  # Replace with your admin group username
 
+# Log yozuvlarini saqlash uchun ro'yxat
+log_messages = []
+
 @app.route('/')
 def hello_world():
     return 'Bot is running!'
 
 @app.route(f'/{BOT_TOKEN}', methods=['POST'])
 def receive_update():
-    json_str = request.get_data().decode('UTF-8')
-    update = telebot.types.Update.de_json(json_str)
-    bot.process_new_updates([update])
-    return '', 200
+    try:
+        json_str = request.get_data().decode('UTF-8')
+        update = telebot.types.Update.de_json(json_str)
+        bot.process_new_updates([update])
+        log_messages.append(json_str)
+        app.logger.info(f"Received update: {json_str}")
+        return '', 200
+    except Exception as e:
+        app.logger.error(f"Error processing update: {e}")
+        return '', 500
+
+@app.route('/logs')
+def get_logs():
+    return '<br>'.join(log_messages)
 
 # Your existing bot functions go here...
 def check(id):
@@ -312,5 +325,5 @@ def handle_video(message):
 
 if __name__ == '__main__':
     import os
-    port = int(os.environ.get('PORT', 8000))
+    port = int(os.environ.get('PORT', 10000))
     app.run(host='0.0.0.0', port=port)
