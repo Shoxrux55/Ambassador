@@ -1,5 +1,6 @@
 import json
 import telebot
+from flask import Flask, request
 
 # TOKEN DETAILS
 TOKEN = "Ball"
@@ -11,10 +12,22 @@ Daily_bonus = 1  # Put daily bonus amount here!
 Per_Refer = 1  # Add per refer bonus here
 
 bot = telebot.TeleBot(BOT_TOKEN)
+app = Flask(__name__)
 
 ADMIN_GROUP_USERNAME = "@endocrineqatnashchi"  # Replace with your admin group username
 
+@app.route('/')
+def hello_world():
+    return 'Bot is running!'
 
+@app.route(f'/{BOT_TOKEN}', methods=['POST'])
+def receive_update():
+    json_str = request.get_data().decode('UTF-8')
+    update = telebot.types.Update.de_json(json_str)
+    bot.process_new_updates([update])
+    return '', 200
+
+# Your existing bot functions go here...
 def check(id):
     for i in CHANNELS:
         check = bot.get_chat_member(i, id)
@@ -24,9 +37,7 @@ def check(id):
             return False
     return True
 
-
 bonus = {}
-
 
 def menu(id):
     keyboard = telebot.types.ReplyKeyboardMarkup(True)
@@ -36,7 +47,6 @@ def menu(id):
     if id == OWNER_ID:
         keyboard.row('📊 Statistika')
     bot.send_message(id, "Asosiy menyu👇", reply_markup=keyboard)
-
 
 def load_users_data():
     try:
@@ -55,16 +65,13 @@ def load_users_data():
             "refer": {}
         }
 
-
 def save_users_data(data):
     with open('users.json', 'w') as f:
         json.dump(data, f)
 
-
 def send_videos(user_id, video_file_ids):
     for video_file_id in video_file_ids:
         bot.send_video(user_id, video_file_id, supports_streaming=True)
-
 
 def send_gift_video(user_id):
     data = load_users_data()
@@ -90,7 +97,6 @@ def send_gift_video(user_id):
         bot.send_message(user_id, '1-dars, 2-dars, va 3-dars videolar sizga jo‘natildi.')
     else:
         bot.send_message(user_id, 'Kechirasiz, ballaringiz yetarli emas.')
-
 
 @bot.message_handler(commands=['start'])
 def start(message):
@@ -143,7 +149,6 @@ Shu mavzulardagi eng so'nggi yangiliklarni o'zlashtirishni xohlasangiz hoziroq m
                          "Botingizda xatolik bor, uni tezda tuzating!\n Xato komandada: " + message.text + "\nXatolik: " + str(e))
         return
 
-
 @bot.callback_query_handler(func=lambda call: True)
 def query_handler(call):
     try:
@@ -193,7 +198,6 @@ def query_handler(call):
         bot.send_message(OWNER_ID, f"Botingizda xatolik bor, uni tezda tuzating!\n Xato komandada: {call.data}\nXatolik: {str(e)}")
         return
 
-
 @bot.message_handler(content_types=['contact'])
 def contact(message):
     if message.contact is not None:
@@ -226,7 +230,6 @@ Ballaringizni ko'rish uchun pastdagi "Mening hisobim" tugmasini bosing"""
         bot.send_message(message.chat.id, gift_message, reply_markup=inline_markup)
         menu(message.chat.id)
 
-
 @bot.callback_query_handler(func=lambda call: call.data in ['account', 'ref_link', 'gift'])
 def account_or_ref_link_handler(call):
     try:
@@ -252,7 +255,6 @@ def account_or_ref_link_handler(call):
         bot.send_message(call.message.chat.id, "Bu buyruqda xatolik bor, iltimos admin xatoni tuzatishini kuting")
         bot.send_message(OWNER_ID, f"Botingizda xatolik bor, uni tezda tuzating!\n Xato komandada: {call.data}\nXatolik: {str(e)}")
 
-
 def send_invite_link(user_id):
     data = load_users_data()
     bot_name = bot.get_me().username
@@ -269,7 +271,6 @@ def send_invite_link(user_id):
            f"Yana bir marta eslatib o'taman Marafon hamma uchun ochiq va bepul.\n\n"
            f"Taklifnoma havolasi: {ref_link}")
     bot.send_message(user_id, msg)
-
 
 @bot.message_handler(content_types=['text'])
 def send_text(message):
@@ -303,13 +304,13 @@ def send_text(message):
         bot.send_message(OWNER_ID, "Botingizda xatolik bor, uni tezda tuzating!\n Xato komandada: " + message.text + "\nXatolik: " + str(e))
         return
 
-
 @bot.message_handler(content_types=['video'])
 def handle_video(message):
     # Video fayl ID sini olish
     video_file_id = message.video.file_id
     bot.send_message(message.chat.id, f"Video fayl ID si: {video_file_id}")
 
-
 if __name__ == '__main__':
-    bot.polling(none_stop=True)
+    import os
+    port = int(os.environ.get('PORT', 5000))
+    app.run(host='0.0.0.0', port=port)
