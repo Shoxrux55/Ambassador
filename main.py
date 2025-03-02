@@ -4,7 +4,7 @@ from flask import Flask, request
 
 # TOKEN DETAILS
 TOKEN = "Ball"
-BOT_TOKEN = "7580694173:AAERNuW1PATTh_LC_WyKahR2pmR052RDUjc"  # Ambassador bot tokeni
+BOT_TOKEN = "7580694173:AAERNuW1PATTh_LC_WyKahR2pmR052RDUjc"
 PAYMENT_CHANNEL = "@Endoland"
 OWNER_ID = 725821571
 CHANNELS = ["@Endoland"]
@@ -63,9 +63,11 @@ def menu(id):
 def load_users_data():
     try:
         with open('users.json', 'r') as f:
-            return json.load(f)
+            data = json.load(f)
+            app.logger.info("users.json muvaffaqiyatli yuklandi")
+            return data
     except (FileNotFoundError, json.JSONDecodeError):
-        return {
+        default_data = {
             "referred": {},
             "referby": {},
             "checkin": {},
@@ -78,11 +80,17 @@ def load_users_data():
             "total": 0,
             "refer": {}
         }
+        save_users_data(default_data)
+        return default_data
 
 def save_users_data(data):
-    with open('users.json', 'w') as f:
-        json.dump(data, f, indent=4)
-    app.logger.info("users.json fayli muvaffaqiyatli yangilandi")  # Log qoldirdim
+    try:
+        with open('users.json', 'w') as f:
+            json.dump(data, f, indent=4)
+        app.logger.info("users.json fayli muvaffaqiyatli yangilandi")
+    except Exception as e:
+        app.logger.error(f"users.json ga yozishda xatolik: {str(e)}")
+        bot.send_message(OWNER_ID, f"Faylga yozish xatosi: {str(e)}")
 
 def send_videos(user_id, video_file_ids):
     for video_file_id in video_file_ids:
@@ -110,7 +118,7 @@ def send_gift_video(user_id):
 def start(message):
     try:
         user_id = message.chat.id
-        username = message.chat.username  # Username’ni bu yerda aniq qo‘yamiz
+        username = message.chat.username  # Username aniq qo‘yildi
         msg = message.text
         user = str(user_id)
         data = load_users_data()
@@ -142,13 +150,13 @@ def start(message):
         if user not in data['id']:
             data['id'][user] = data['total'] + 1
         if user not in data['username']:
-            data['username'][user] = username if username else "Noma’lum"  # Username to‘g‘ri ishlatildi
+            data['username'][user] = username if username else "Noma’lum"
         
         save_users_data(data)
         
         markup = telebot.types.InlineKeyboardMarkup()
         markup.add(telebot.types.InlineKeyboardButton(
-            text='Marafon kanaliga qo‘shilish', url='https://t.me/medstone_usmle'))
+            text='Marafon kanaliga qo‘shilish', url='https://t.me/Endoland'))
         markup.add(telebot.types.InlineKeyboardButton(
             text='Obunani tekshirish', callback_data='check'))
         msg_start = """Tabriklayman! Siz marafon qatnashchisi bo'lishga yaqin qoldingiz..."""
@@ -158,7 +166,6 @@ def start(message):
         bot.send_message(OWNER_ID, f"Xatolik: {str(e)}")
         app.logger.error(f"Xatolik /start da: {str(e)}")
 
-# Qolgan funksiyalar (query_handler, contact, va hokazo) bir xil qoladi, faqat dollar_balance qo‘shiladi
 @bot.callback_query_handler(func=lambda call: True)
 def query_handler(call):
     try:
