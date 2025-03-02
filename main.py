@@ -36,10 +36,15 @@ def receive_update():
         app.logger.error(f"Error processing update: {e}")
         return '', 500
 
+@app.route('/webhook', methods=['POST'])
+def webhook():
+    return receive_update()
+
 @app.route('/logs')
 def get_logs():
     return '<br>'.join(log_messages)
 
+# Bot funksiyalari
 def check(id):
     for i in CHANNELS:
         check = bot.get_chat_member(i, id)
@@ -63,11 +68,9 @@ def menu(id):
 def load_users_data():
     try:
         with open('users.json', 'r') as f:
-            data = json.load(f)
-            app.logger.info("users.json muvaffaqiyatli yuklandi")
-            return data
+            return json.load(f)
     except (FileNotFoundError, json.JSONDecodeError):
-        default_data = {
+        return {
             "referred": {},
             "referby": {},
             "checkin": {},
@@ -76,21 +79,14 @@ def load_users_data():
             "dollar_balance": {},
             "withd": {},
             "id": {},
-            "username": {},
+            "username": {},  # Username’lar uchun yangi maydon
             "total": 0,
             "refer": {}
         }
-        save_users_data(default_data)
-        return default_data
 
 def save_users_data(data):
-    try:
-        with open('users.json', 'w') as f:
-            json.dump(data, f, indent=4)
-        app.logger.info("users.json fayli muvaffaqiyatli yangilandi")
-    except Exception as e:
-        app.logger.error(f"users.json ga yozishda xatolik: {str(e)}")
-        bot.send_message(OWNER_ID, f"Faylga yozish xatosi: {str(e)}")
+    with open('users.json', 'w') as f:
+        json.dump(data, f)
 
 def send_videos(user_id, video_file_ids):
     for video_file_id in video_file_ids:
@@ -118,25 +114,20 @@ def send_gift_video(user_id):
 def start(message):
     try:
         user_id = message.chat.id
-        username = message.chat.username  # Username aniq qo‘yildi
+        username = message.chat.username
         msg = message.text
         user = str(user_id)
         data = load_users_data()
         referrer = None if msg == '/start' else msg.split()[1]
 
-        app.logger.info(f"Start: user={user_id}, referrer={referrer}")
-        
         if user not in data['referred']:
             data['referred'][user] = 0
             data['total'] += 1
         if user not in data['referby']:
             data['referby'][user] = referrer if referrer else user
             if referrer and referrer in data['referred']:
-                data['referred'][referrer] = data['referred'].get(referrer, 0) + 1
-                data['balance'][referrer] = data['balance'].get(referrer, 0) + Per_Refer
-                if referrer not in data['dollar_balance']:
-                    data['dollar_balance'][referrer] = 0.0
-                bot.send_message(referrer, f"Do'stingiz kanalga qo'shildi va siz +{Per_Refer} {TOKEN} ishlab oldingiz")
+                data['referred'][referrer] += 1
+                data['balance'][referrer] += Per_Refer
         if user not in data['checkin']:
             data['checkin'][user] = 0
         if user not in data['DailyQuiz']:
@@ -151,9 +142,8 @@ def start(message):
             data['id'][user] = data['total'] + 1
         if user not in data['username']:
             data['username'][user] = username if username else "Noma’lum"
-        
         save_users_data(data)
-        
+
         markup = telebot.types.InlineKeyboardMarkup()
         markup.add(telebot.types.InlineKeyboardButton(
             text='Marafon kanaliga qo‘shilish', url='https://t.me/Endoland'))
@@ -164,7 +154,6 @@ def start(message):
     except Exception as e:
         bot.send_message(user_id, "Bu buyruqda xatolik bor, iltimos admin xatoni tuzatishini kuting")
         bot.send_message(OWNER_ID, f"Xatolik: {str(e)}")
-        app.logger.error(f"Xatolik /start da: {str(e)}")
 
 @bot.callback_query_handler(func=lambda call: True)
 def query_handler(call):
@@ -185,8 +174,12 @@ def query_handler(call):
                     if int(data['referby'][user]) != user_id:
                         ref_id = data['referby'][user]
                         ref = str(ref_id)
-                        data['balance'][ref] = data['balance'].get(ref, 0) + Per_Refer
-                        data['referred'][ref] = data['referred'].get(ref, 0) + 1
+                        if ref not in data['balance']:
+                            data['balance'][ref] = 0
+                        if ref not in data['referred']:
+                            data['referred'][ref] = 0
+                        data['balance'][ref] += Per_Refer
+                        data['referred'][ref] += 1
                         bot.send_message(ref_id, f"Do'stingiz kanalga qo'shildi va siz +{Per_Refer} {TOKEN} ishlab oldingiz")
                     save_users_data(data)
 
@@ -196,7 +189,8 @@ def query_handler(call):
             else:
                 bot.answer_callback_query(callback_query_id=call.id, text='Siz hali kanalga qo‘shilmadingiz')
                 markup = telebot.types.InlineKeyboardMarkup()
-                markup.add(telebot.types.InlineKeyboardButton(text='Obunani tekshirish', callback_data='check'))
+                markup.add(telebot.types.InlineKeyboardButton(
+                    text='Obunani tekshirish', callback_data='check'))
                 bot.send_message(call.message.chat.id, "Kanalga qo‘shiling:\n- @Endoland", reply_markup=markup)
     except Exception as e:
         bot.send_message(call.message.chat.id, "Xatolik yuz berdi")
@@ -235,7 +229,7 @@ def account_or_ref_link_handler(call):
         elif call.data == 'gift':
             send_gift_video(user_id)
     except Exception as e:
-        bot.send_message(call.message.chat.id, "Xatolik yuz berdi")
+        bot.send_message(user_id, "Xatolik yuz berdi")
         bot.send_message(OWNER_ID, f"Xatolik: {str(e)}")
 
 def send_invite_link(user_id):
@@ -275,19 +269,20 @@ def add_student(message):
             return
         
         referrer = data['referby'].get(buyer_id, buyer_id)
-        if referrer == buyer_id or referrer not in data['referred']:
+        if referrer == buyer_id or referrer not in data['dollar_balance']:
             bot.send_message(message.chat.id, f"@{username} hech kim tomonidan taklif qilinmagan.")
             return
         
         referrer = str(referrer)
-        data['dollar_balance'][referrer] = data['dollar_balance'].get(referrer, 0.0) + 5.0
+        if referrer not in data['dollar_balance']:
+            data['dollar_balance'][referrer] = 0.0
+        data['dollar_balance'][referrer] += 5.0
         save_users_data(data)
         
         bot.send_message(message.chat.id, f"@{username} {referrer} uchun qayd qilindi. +5$ qo‘shildi.")
         bot.send_message(referrer, f"Siz taklif qilgan @{username} yopiq guruhga qo‘shildi! +5$ qo‘shildi.")
     except Exception as e:
         bot.send_message(message.chat.id, f"Xatolik: {str(e)}")
-        bot.send_message(OWNER_ID, f"Xatolik /addstudent da: {str(e)}")
 
 @bot.message_handler(content_types=['text'])
 def send_text(message):
@@ -301,7 +296,7 @@ def send_text(message):
             markup = telebot.types.InlineKeyboardMarkup()
             markup.add(telebot.types.InlineKeyboardButton(text=f"Balans: {balance} Ball", callback_data='balance'))
             msg = f"Foydalanuvchi: @{message.from_user.username}\nBallar: {balance} {TOKEN}\nDollar balans: ${dollar_balance}"
-            bot.send_message(message.chat.id, msg, reply_markup=markup)
+            bot.send_message(user_id, msg, reply_markup=markup)
         elif message.text == '🙌🏻 Maxsus linkim':
             send_invite_link(message.chat.id)
         elif message.text == '🎁 Mening sovg\'am':
