@@ -78,17 +78,17 @@ bonus = {}
 def menu(id):
     """Asosiy menyuni ko‘rsatadi"""
     if id == OWNER_ID:
-        # Admin uchun inline keyboard
-        markup = telebot.types.InlineKeyboardMarkup()
-        markup.add(telebot.types.InlineKeyboardButton(text='🆔 Mening hisobim', callback_data='account'))
-        markup.add(telebot.types.InlineKeyboardButton(text='🙌🏻 Maxsus linkim', callback_data='ref_link'))
-        markup.add(telebot.types.InlineKeyboardButton(text='🎁 Mening sovg\'am', callback_data='gift'))
-        markup.add(telebot.types.InlineKeyboardButton(text='📊 Statistika', callback_data='stats'))
-        markup.add(telebot.types.InlineKeyboardButton(text='Talabalarni hisoblash', callback_data='calculate_students'))
-        bot.send_message(id, "Asosiy menyu👇", reply_markup=markup)
+        # Admin uchun ReplyKeyboardMarkup (pastda tugmalar)
+        keyboard = telebot.types.ReplyKeyboardMarkup(True, resize_keyboard=True)
+        keyboard.row('🆔 Mening hisobim')
+        keyboard.row('🙌🏻 Maxsus linkim')
+        keyboard.row('🎁 Mening sovg\'am')
+        keyboard.row('📊 Statistika')
+        keyboard.row('Talabalarni hisoblash')  # Yangi tugma qo‘shildi
+        bot.send_message(id, "Asosiy menyu👇", reply_markup=keyboard)
     else:
-        # Oddiy foydalanuvchilar uchun ReplyKeyboard
-        keyboard = telebot.types.ReplyKeyboardMarkup(True)
+        # Oddiy foydalanuvchilar uchun ReplyKeyboard (pastda tugmalar)
+        keyboard = telebot.types.ReplyKeyboardMarkup(True, resize_keyboard=True)
         keyboard.row('🆔 Mening hisobim')
         keyboard.row('🙌🏻 Maxsus linkim')
         keyboard.row('🎁 Mening sovg\'am')
@@ -251,15 +251,15 @@ def start(message):
         bot.send_message(user_id, "Bu buyruqda xatolik bor, iltimos admin xatoni tuzatishini kuting")
         bot.send_message(OWNER_ID, f"Xatolik: {str(e)}")
 
-@bot.callback_query_handler(func=lambda call: True)
-def query_handler(call):
-    """Inline tugmalar bilan ishlash"""
+@bot.callback_query_handler(func=lambda call: call.data in ['gift', 'check'])
+def gift_or_check_handler(call):
+    """Gift yoki kanal tekshiruvi uchun inline tugmalar bilan ishlash"""
     try:
-        ch = check(call.message.chat.id)
+        user_id = call.message.chat.id
         if call.data == 'check':
+            ch = check(user_id)
             if ch:
                 data = load_users_data()
-                user_id = call.message.chat.id
                 user = str(user_id)
                 username = call.message.chat.username
                 bot.answer_callback_query(callback_query_id=call.id, text='Siz kanalga qo‘shildingiz, omad tilaymiz')
@@ -286,11 +286,12 @@ def query_handler(call):
             else:
                 bot.answer_callback_query(callback_query_id=call.id, text='Siz hali kanalga qo‘shilmadingiz')
                 markup = telebot.types.InlineKeyboardMarkup()
-                markup.add(telebot.types.InlineKeyboardButton(
-                    text='Obunani tekshirish', callback_data='check'))
-                bot.send_message(call.message.chat.id, "Kanalga qo‘shiling:\n- @Endoland", reply_markup=markup)
+                markup.add(telebot.types.InlineKeyboardButton(text='Obunani tekshirish', callback_data='check'))
+                bot.send_message(user_id, "Kanalga qo‘shiling:\n- @Endoland", reply_markup=markup)
+        elif call.data == 'gift':
+            send_gift_video(user_id)
     except Exception as e:
-        bot.send_message(call.message.chat.id, "Xatolik yuz berdi")
+        bot.send_message(user_id, "Xatolik yuz berdi")
         bot.send_message(OWNER_ID, f"Xatolik: {str(e)}")
 
 @bot.message_handler(content_types=['contact'])
@@ -305,33 +306,32 @@ def contact(message):
         inline_markup.add(telebot.types.InlineKeyboardButton(text="Sovg'angiz👇", callback_data='gift'))
         gift_message = """Siz uchun tayyorlab qo'ygan sovg'alarimizni kutib oling🤗..."""
         bot.send_message(message.chat.id, gift_message, reply_markup=inline_markup)
-        menu(message.chat.id)
+        menu(message.chat.id)  # Bu ReplyKeyboard bo‘ladi
 
-@bot.callback_query_handler(func=lambda call: call.data in ['account', 'ref_link', 'gift', 'calculate_students', 'stats'])
-def account_or_ref_link_handler(call):
-    """Hisob, referal link, sovg‘a, statistika yoki talabalarni hisoblash so‘rovlarini boshqaradi"""
+@bot.message_handler(content_types=['text'])
+def send_text(message):
+    """Matnli xabarlarni qayta ishlaydi"""
     try:
-        user_id = call.message.chat.id
-        data = load_users_data()
-        user = str(user_id)
-        username = call.message.chat.username
-
-        if call.data == 'account':
+        user_id = message.chat.id
+        if message.text == '🆔 Mening hisobim':
+            data = load_users_data()
+            user = str(user_id)
             balance = data['balance'].get(user, 0)
             dollar_balance = data['dollar_balance'].get(user, 0.0)
             markup = telebot.types.InlineKeyboardMarkup()
             markup.add(telebot.types.InlineKeyboardButton(text=f"Balans: {balance} Ball", callback_data='balance'))
-            msg = f"Foydalanuvchi: @{username}\nBallar: {balance} {TOKEN}\nDollar balans: ${dollar_balance}"
+            msg = f"Foydalanuvchi: @{message.from_user.username}\nBallar: {balance} {TOKEN}\nDollar balans: ${dollar_balance}"
             bot.send_message(user_id, msg, reply_markup=markup)
-        elif call.data == 'ref_link':
+        elif message.text == '🙌🏻 Maxsus linkim':
             send_invite_link(user_id)
-        elif call.data == 'gift':
+        elif message.text == '🎁 Mening sovg\'am':
             send_gift_video(user_id)
-        elif call.data == 'stats' and user_id == OWNER_ID:
+        elif message.text == "📊 Statistika" and user_id == OWNER_ID:
             data = load_users_data()
             bot.send_message(user_id, f"Jami foydalanuvchilar: {data['total']}")
-        elif call.data == 'calculate_students':
-            handle_calculate_students(call)
+        elif message.text == "Talabalarni hisoblash" and user_id == OWNER_ID:
+            bot.send_message(user_id, "Iltimos, qo'shilgan talabaning username'ni kiriting (masalan, @username):")
+            bot.register_next_step_handler(message, process_student_username)
     except Exception as e:
         bot.send_message(user_id, "Xatolik yuz berdi")
         bot.send_message(OWNER_ID, f"Xatolik: {str(e)}")
@@ -393,31 +393,6 @@ def add_student(message):
     except Exception as e:
         bot.send_message(message.chat.id, f"Xatolik: {str(e)}")
         app.logger.error(f"Error in add_student: {str(e)}")
-
-@bot.message_handler(content_types=['text'])
-def send_text(message):
-    """Matnli xabarlarni qayta ishlaydi"""
-    try:
-        if message.text == '🆔 Mening hisobim':
-            data = load_users_data()
-            user_id = message.chat.id
-            user = str(user_id)
-            balance = data['balance'].get(user, 0)
-            dollar_balance = data['dollar_balance'].get(user, 0.0)
-            markup = telebot.types.InlineKeyboardMarkup()
-            markup.add(telebot.types.InlineKeyboardButton(text=f"Balans: {balance} Ball", callback_data='balance'))
-            msg = f"Foydalanuvchi: @{message.from_user.username}\nBallar: {balance} {TOKEN}\nDollar balans: ${dollar_balance}"
-            bot.send_message(user_id, msg, reply_markup=markup)
-        elif message.text == '🙌🏻 Maxsus linkim':
-            send_invite_link(message.chat.id)
-        elif message.text == '🎁 Mening sovg\'am':
-            send_gift_video(message.chat.id)
-        elif message.text == "📊 Statistika" and message.chat.id == OWNER_ID:
-            data = load_users_data()
-            bot.send_message(message.chat.id, f"Jami foydalanuvchilar: {data['total']}")
-    except Exception as e:
-        bot.send_message(message.chat.id, "Xatolik yuz berdi")
-        bot.send_message(OWNER_ID, f"Xatolik: {str(e)}")
 
 @bot.callback_query_handler(func=lambda call: call.data == 'calculate_students')
 def handle_calculate_students(call):
