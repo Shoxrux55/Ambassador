@@ -148,7 +148,7 @@ def start(message):
 
         markup = telebot.types.InlineKeyboardMarkup()
         markup.add(telebot.types.InlineKeyboardButton(
-            text='Marafon kanaliga qo‘shilish', url='https://t.me/medstone_usmle'))
+            text='Marafon kanaliga qo‘shilish', url='https://t.me/Endoland'))
         markup.add(telebot.types.InlineKeyboardButton(
             text='Obunani tekshirish', callback_data='check'))
         msg_start = """Tabriklayman! Siz marafon qatnashchisi bo'lishga yaqin qoldingiz..."""
