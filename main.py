@@ -109,12 +109,15 @@ def send_gift_video(user_id):
 @bot.message_handler(commands=['start'])
 def start(message):
     try:
-        user = message.chat.id
+        user_id = message.chat.id
+        username = message.chat.username  # Username’ni bu yerda aniq qo‘yamiz
         msg = message.text
-        user = str(user)
+        user = str(user_id)
         data = load_users_data()
         referrer = None if msg == '/start' else msg.split()[1]
 
+        app.logger.info(f"Start: user={user_id}, referrer={referrer}")
+        
         if user not in data['referred']:
             data['referred'][user] = 0
             data['total'] += 1
@@ -125,6 +128,7 @@ def start(message):
                 data['balance'][referrer] = data['balance'].get(referrer, 0) + Per_Refer
                 if referrer not in data['dollar_balance']:
                     data['dollar_balance'][referrer] = 0.0
+                bot.send_message(referrer, f"Do'stingiz kanalga qo'shildi va siz +{Per_Refer} {TOKEN} ishlab oldingiz")
         if user not in data['checkin']:
             data['checkin'][user] = 0
         if user not in data['DailyQuiz']:
@@ -138,19 +142,21 @@ def start(message):
         if user not in data['id']:
             data['id'][user] = data['total'] + 1
         if user not in data['username']:
-            data['username'][user] = username if username else "Noma’lum"
+            data['username'][user] = username if username else "Noma’lum"  # Username to‘g‘ri ishlatildi
+        
         save_users_data(data)
-
+        
         markup = telebot.types.InlineKeyboardMarkup()
         markup.add(telebot.types.InlineKeyboardButton(
-            text='Marafon kanaliga qo‘shilish', url='https://t.me/Endoland'))
+            text='Marafon kanaliga qo‘shilish', url='https://t.me/medstone_usmle'))
         markup.add(telebot.types.InlineKeyboardButton(
             text='Obunani tekshirish', callback_data='check'))
         msg_start = """Tabriklayman! Siz marafon qatnashchisi bo'lishga yaqin qoldingiz..."""
-        bot.send_message(user, msg_start, reply_markup=markup)
+        bot.send_message(user_id, msg_start, reply_markup=markup)
     except Exception as e:
-        bot.send_message(message.chat.id, "Bu buyruqda xatolik bor...")
+        bot.send_message(user_id, "Bu buyruqda xatolik bor, iltimos admin xatoni tuzatishini kuting")
         bot.send_message(OWNER_ID, f"Xatolik: {str(e)}")
+        app.logger.error(f"Xatolik /start da: {str(e)}")
 
 # Qolgan funksiyalar (query_handler, contact, va hokazo) bir xil qoladi, faqat dollar_balance qo‘shiladi
 @bot.callback_query_handler(func=lambda call: True)
