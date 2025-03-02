@@ -1,10 +1,11 @@
 {
-  "referred": {"725821571": 0},           // Taklif qilinganlar soni nollandi
-  "referby": {"12345": "725821571"},      // Bu bog‘liqlik sifatida qoldi, chunki nol qilib bo‘lmaydi
-  "balance": {"725821571": 0},            // Ballar nollandi
-  "dollar_balance": {"725821571": 0.0},   // Dollar balans nollandi
-  "withd": {"725821571": 0},              // Nol allaqachon edi, o‘zgarmadi
-  "id": {"725821571": 0},                 // ID nollandi (lekin odatda bunga ehtiyoj yo‘q)
-  "total": 0,                             // Umumiy son nollandi
-  "refer": {"725821571": false}           // True o‘rniga false qo‘yildi
+  "referred": {"725821571": 1},
+  "referby": {"12345": "725821571"},
+  "username": {"12345": "TestUser"},
+  "balance": {"725821571": 0},
+  "dollar_balance": {"725821571": 0.0},
+  "withd": {"725821571": 0},
+  "id": {"725821571": 1},
+  "total": 1,
+  "refer": {"725821571": true}
 }
