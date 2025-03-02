@@ -85,8 +85,14 @@ def load_users_data():
         }
 
 def save_users_data(data):
-    with open('users.json', 'w') as f:
-        json.dump(data, f)
+    try:
+        with open('users.json', 'w') as f:
+            json.dump(data, f, indent=4)
+        app.logger.info("users.json fayli muvaffaqiyatli yangilandi")
+    except Exception as e:
+        app.logger.error(f"users.json ga yozishda xatolik: {str(e)}")
+        bot.send_message(OWNER_ID, f"Faylga yozish xatosi: {str(e)}")
+        raise
 
 def send_videos(user_id, video_file_ids):
     for video_file_id in video_file_ids:
@@ -120,6 +126,8 @@ def start(message):
         data = load_users_data()
         referrer = None if msg == '/start' else msg.split()[1]
 
+        app.logger.info(f"Start: user={user_id}, referrer={referrer}")
+        
         if user not in data['referred']:
             data['referred'][user] = 0
             data['total'] += 1
@@ -130,6 +138,7 @@ def start(message):
                 data['balance'][referrer] = data['balance'].get(referrer, 0) + Per_Refer
                 if referrer not in data['dollar_balance']:
                     data['dollar_balance'][referrer] = 0.0
+                bot.send_message(referrer, f"Do'stingiz kanalga qo'shildi va siz +{Per_Refer} {TOKEN} ishlab oldingiz")
         if user not in data['checkin']:
             data['checkin'][user] = 0
         if user not in data['DailyQuiz']:
@@ -144,7 +153,11 @@ def start(message):
             data['id'][user] = data['total'] + 1
         if user not in data['username']:
             data['username'][user] = username if username else "Noma’lum"
+        
+        # Faylga yozishni alohida sinash
+        app.logger.info(f"Data yangilandi: balance={data['balance']}, referred={data['referred']}")
         save_users_data(data)
+        app.logger.info("Faylga yozish chaqirildi")
 
         markup = telebot.types.InlineKeyboardMarkup()
         markup.add(telebot.types.InlineKeyboardButton(
@@ -156,7 +169,8 @@ def start(message):
     except Exception as e:
         bot.send_message(user_id, "Bu buyruqda xatolik bor, iltimos admin xatoni tuzatishini kuting")
         bot.send_message(OWNER_ID, f"Xatolik: {str(e)}")
-
+        app.logger.error(f"Xatolik /start da: {str(e)}")
+        
 @bot.callback_query_handler(func=lambda call: True)
 def query_handler(call):
     try:
