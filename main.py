@@ -3,6 +3,7 @@ import telebot
 from flask import Flask, request
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
+import os
 
 # Bot sozlamalari
 TOKEN = "Ball"
@@ -16,19 +17,12 @@ Per_Refer = 1
 bot = telebot.TeleBot(BOT_TOKEN)
 app = Flask(__name__)
 
-ADMIN_GROUP_USERNAME = "@endocrineqatnashchi"
-
-# Log yozuvlari uchun ro'yxat
-log_messages = []
-
 # Google Sheets sozlamalari
 scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
-# Agar Render’da environment variable ishlatmoqchi bo‘lsangiz, quyidagi kodni faollashtiring:
-# creds_json = json.loads(os.environ.get('GOOGLE_SHEETS_CREDENTIALS'))
-# creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_json, scope)
-creds = ServiceAccountCredentials.from_json_keyfile_name('credentials.json', scope)  # Mahalliy test uchun
+creds_json = json.loads(os.environ.get('GOOGLE_SHEETS_CREDENTIALS'))  # Render uchun
+creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_json, scope)
 client = gspread.authorize(creds)
-sheet = client.open("Ambassador").sheet1  # "BotUsers" nomli jadval
+sheet = client.open("Ambassador").sheet1  # Jadval nomini to‘g‘rilang agar kerak bo‘lsa
 
 @app.route('/')
 def hello_world():
