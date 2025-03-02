@@ -359,15 +359,16 @@ def add_student(message):
             bot.send_message(message.chat.id, f"@{username} botda topilmadi.")
             return
         
-        referrer = data['referby'].get(buyer_id, buyer_id)
-        # Faqat referrer dollar_balance'da yo'q bo'lsa xatolik qaytarilsin
-        if referrer not in data['dollar_balance']:
-            # Referrer uchun dollar_balance mavjud bo'lmasa, avtomatik qo'shamiz
-            data['dollar_balance'][referrer] = 0.0
-            save_users_data(data)
-            bot.send_message(message.chat.id, f"@{username} hech kim tomonidan taklif qilinmagan, lekin referrer uchun dollar_balance 0.0 sifatida yaratildi.")
-            return
+        # Referrer'ni olish va tekshirish
+        referrer = data['referby'].get(str(buyer_id), str(buyer_id))
+        app.logger.info(f"Checking addstudent for @{username}: buyer_id={buyer_id}, referrer={referrer}")
         
+        # Dollar_balance mavjudligini tekshirish va avtomatik yaratish
+        if str(referrer) not in data['dollar_balance']:
+            data['dollar_balance'][str(referrer)] = 0.0
+            app.logger.info(f"Created dollar_balance for referrer {referrer} with value 0.0")
+        
+        # Referrer dollar_balance'da mavjud bo'lsa, +5$ qo'shamiz
         referrer = str(referrer)
         data['dollar_balance'][referrer] += 5.0
         save_users_data(data)
@@ -376,6 +377,7 @@ def add_student(message):
         bot.send_message(referrer, f"Siz taklif qilgan @{username} yopiq guruhga qo‘shildi! +5$ qo‘shildi.")
     except Exception as e:
         bot.send_message(message.chat.id, f"Xatolik: {str(e)}")
+        app.logger.error(f"Error in add_student: {str(e)}")
 
 @bot.message_handler(content_types=['text'])
 def send_text(message):
