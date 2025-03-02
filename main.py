@@ -82,7 +82,7 @@ def menu(id):
     keyboard.row('🙌🏻 Maxsus linkim')
     keyboard.row('🎁 Mening sovg\'am')
     if id == OWNER_ID:
-        keyboard.row('📊 Statistika')
+        keyboard.row('📊 Statistika', 'Talabalarni hisoblash')  # Yangi tugma qo‘shildi
     bot.send_message(id, "Asosiy menyu👇", reply_markup=keyboard)
 
 def load_users_data():
@@ -298,9 +298,9 @@ def contact(message):
         bot.send_message(message.chat.id, gift_message, reply_markup=inline_markup)
         menu(message.chat.id)
 
-@bot.callback_query_handler(func=lambda call: call.data in ['account', 'ref_link', 'gift'])
+@bot.callback_query_handler(func=lambda call: call.data in ['account', 'ref_link', 'gift', 'calculate_students'])
 def account_or_ref_link_handler(call):
-    """Hisob, referal link yoki sovg‘a so‘rovlarini boshqaradi"""
+    """Hisob, referal link, sovg‘a yoki talabalarni hisoblash so‘rovlarini boshqaradi"""
     try:
         user_id = call.message.chat.id
         data = load_users_data()
@@ -318,6 +318,8 @@ def account_or_ref_link_handler(call):
             send_invite_link(user_id)
         elif call.data == 'gift':
             send_gift_video(user_id)
+        elif call.data == 'calculate_students':
+            handle_calculate_students(call)
     except Exception as e:
         bot.send_message(user_id, "Xatolik yuz berdi")
         bot.send_message(OWNER_ID, f"Xatolik: {str(e)}")
@@ -341,6 +343,7 @@ def add_student(message):
         return
     
     try:
+        # Message text dan username olish
         args = message.text.split()
         if len(args) != 2:
             bot.send_message(message.chat.id, "To‘g‘ri format: /addstudent @username")
@@ -403,6 +406,36 @@ def send_text(message):
     except Exception as e:
         bot.send_message(message.chat.id, "Xatolik yuz berdi")
         bot.send_message(OWNER_ID, f"Xatolik: {str(e)}")
+
+@bot.callback_query_handler(func=lambda call: call.data == 'calculate_students')
+def handle_calculate_students(call):
+    try:
+        user_id = call.message.chat.id
+        if user_id != OWNER_ID:
+            bot.answer_callback_query(callback_query_id=call.id, text="Bu funksiya faqat bot egasiga mavjud.")
+            return
+        
+        # Admin'dan username so'rash
+        bot.send_message(user_id, "Iltimos, qo'shilgan talabaning username'ni kiriting (masalan, @username):")
+        bot.register_next_step_handler(call.message, process_student_username)
+    except Exception as e:
+        bot.send_message(user_id, "Xatolik yuz berdi")
+        bot.send_message(OWNER_ID, f"Xatolik handle_calculate_students’da: {str(e)}")
+
+def process_student_username(message):
+    try:
+        user_id = message.chat.id
+        if user_id != OWNER_ID:
+            bot.send_message(user_id, "Bu funksiya faqat bot egasiga mavjud.")
+            return
+        
+        username = message.text.replace('@', '')
+        # /addstudent logikasini chaqirish
+        mock_message = type('MockMessage', (), {'chat': type('Chat', (), {'id': user_id}), 'text': f'/addstudent @{username}'})()
+        add_student(mock_message)
+    except Exception as e:
+        bot.send_message(user_id, "Xatolik yuz berdi")
+        bot.send_message(OWNER_ID, f"Xatolik process_student_username’da: {str(e)}")
 
 if __name__ == '__main__':
     import os
