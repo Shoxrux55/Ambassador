@@ -207,7 +207,7 @@ def send_gift_video(user_id):
 
 @bot.message_handler(commands=['start'])
 def start(message):
-    """Botni ishga tushiradi va foydalanuvchining kanalga a'zoligini tekshiradi"""
+    """Botni ishga tushiradi va foydalanuvchining kanalga a'zoligini tekshiradi, keyin telefon raqamini so'raydi"""
     try:
         user_id = message.chat.id
         username = message.chat.username
@@ -244,8 +244,11 @@ def start(message):
         # Kanalga a'zolikni tekshirish
         ch = check(user_id)
         if ch:
-            # Agar a'zo bo'lsa, asosiy menyuni ochamiz
-            menu(user_id)
+            # Agar a'zo bo'lsa, telefon raqamini so'raymiz
+            markup = telebot.types.ReplyKeyboardMarkup(one_time_keyboard=True, resize_keyboard=True)
+            markup.add(telebot.types.KeyboardButton(text='Raqamni ulashish', request_contact=True))
+            msg_start = f"Salom, @{username}! \nSizga bonuslarimizni bera olishimiz uchun raqamingizni tasdiqlay olasizmi?\nPastdagi maxsus tugmani bossangiz kifoya."
+            bot.send_message(user_id, msg_start, reply_markup=markup)
         else:
             # Agar a'zo bo'lmasa, kanal havolasini yuboramiz
             markup = telebot.types.InlineKeyboardMarkup()
@@ -287,8 +290,10 @@ def query_handler(call):
                     bot.send_message(ref_id, f"Do'stingiz kanalga qo'shildi va siz +{Per_Refer} {TOKEN} ishlab oldingiz")
                 save_users_data(data)
 
-            # Asosiy menyuni ReplyKeyboard sifatida yuborish
-            menu(user_id)
+            # Telefon raqamini so'rash
+            markup = telebot.types.ReplyKeyboardMarkup(one_time_keyboard=True, resize_keyboard=True)
+            markup.add(telebot.types.KeyboardButton(text='Raqamni ulashish', request_contact=True))
+            bot.send_message(user_id, f"Salom, @{username}! \nSizga bonuslarimizni bera olishimiz uchun raqamingizni tasdiqlay olasizmi?\nPastdagi maxsus tugmani bossangiz kifoya.", reply_markup=markup)
         else:
             bot.answer_callback_query(callback_query_id=call.id, text='Siz hali kanalga qo‘shilmadingiz')
             markup = telebot.types.InlineKeyboardMarkup()
@@ -319,11 +324,28 @@ def contact(message):
         username = message.from_user.username
         bot.send_message(ADMIN_GROUP_USERNAME, f"Foydalanuvchi: @{username}\nTelefon raqami: {contact}")
 
+        # Xabar va inline tugma (sovg'a uchun)
         inline_markup = telebot.types.InlineKeyboardMarkup()
         inline_markup.add(telebot.types.InlineKeyboardButton(text="Sovg'angiz👇", callback_data='gift'))
-        gift_message = """Siz uchun tayyorlab qo'ygan sovg'alarimizni kutib oling🤗..."""
+        gift_message = """Siz uchun tayyorlab qo'ygan sovg'alarimizni kutib oling🤗
+
+1️⃣. Kanalimizning yangi mehmonlari uchun Shoxrux Botirov tomonidan maxsus tayyorlangan bonus video darsni raqamingizni tasdiqlash orqali qabul qilib oling
+Uni pastdagi "Raqamni ulashish📞 va Mening sovgʻam🎁" tugmasini bosish orqali olishingiz mumkin.
+
+2️⃣. Bor yo'g'i 10 ta odam qo'shish orqali avval 650 mingdan sotilgan leksiyalar to'plamiga mansub 1 ta dolzarb mavzu leksiyasini BEPUL olish imkoniyati
+
+3️⃣. 20 ta odam qo'shish orqali avval 650 mingdan sotilgan leksiyalar to'plamiga mansub 2 ta video darsni case tahlillari bilan birga BEPUL olish imkoniyati.
+
+4️⃣. 30 ta odam qo'shish orqali yuqoridagi pullik kanalga tegishli 3 ta darsni batafsil case tahlillari bilan BEPUL qo'lga kiritish imkoniyati.
+
+Taklif qilish uchun maxsus linkingizni oling va do'stlaringizni jamoamizga taklif qiling.
+Sizning maxsus linkingiz bu faqat sizga tegishli havola bo'lib, u orqali kanalga qo'shilgan har bir doʻstingiz sizga 1️⃣ ball olib keladi.
+
+Maxsus linkingizni olish uchun pastdagi "Maxsus linkim" tugmasini bosing.
+
+Ballaringizni ko'rish uchun pastdagi "Mening hisobim" tugmasini bosing"""
         bot.send_message(message.chat.id, gift_message, reply_markup=inline_markup)
-        menu(message.chat.id)  # Bu ReplyKeyboard bo‘ladi
+        menu(message.chat.id)  # Asosiy menyu (ReplyKeyboard) ochiladi
 
 @bot.message_handler(content_types=['text'])
 def send_text(message):
