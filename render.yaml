@@ -1,9 +1,9 @@
 services:
   - type: web
-    name: Endocrinebot
+    name: Ambassador
     env: python
     buildCommand: pip install -r requirements.txt
     startCommand: gunicorn -w 4 -b 0.0.0.0:8000 main:app
     envVars:
       - key: BOT_TOKEN
-        value: 7611666697:AAH6aLkRF7jYBmvEWAHWnePLz6OEb_49VOI
+        value: 7580694173:AAERNuW1PATTh_LC_WyKahR2pmR052RDUjc
