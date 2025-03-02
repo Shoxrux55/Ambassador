@@ -1,13 +1,13 @@
 {
-  "referred": {"725821571": 0},
-  "referby": {"12345": "725821571"},
-  "checkin": {},  // Qo‘shildi
-  "DailyQuiz": {},  // Qo‘shildi
-  "balance": {"725821571": 0},
+  "referred": {"725821571": 1},
+  "referby": {"12345": "725821571", "54321": "725821571"},
+  "checkin": {"54321": 0},
+  "DailyQuiz": {"54321": "0"},
+  "balance": {"725821571": 1},
   "dollar_balance": {"725821571": 0.0},
   "withd": {"725821571": 0},
-  "id": {"725821571": 0},
-  "username": {},  // Qo‘shildi
-  "total": 0,
+  "id": {"725821571": 0, "54321": 1},
+  "username": {"54321": "md_shl"},
+  "total": 1,
   "refer": {"725821571": false}
 }
