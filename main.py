@@ -156,7 +156,7 @@ def start(message):
         
         markup = telebot.types.InlineKeyboardMarkup()
         markup.add(telebot.types.InlineKeyboardButton(
-            text='Marafon kanaliga qo‘shilish', url='https://t.me/medstone_usmle'))
+            text='Marafon kanaliga qo‘shilish', url='https://t.me/Endoland'))
         markup.add(telebot.types.InlineKeyboardButton(
             text='Obunani tekshirish', callback_data='check'))
         msg_start = """Tabriklayman! Siz marafon qatnashchisi bo'lishga yaqin qoldingiz..."""
@@ -197,7 +197,7 @@ def query_handler(call):
                 bot.answer_callback_query(callback_query_id=call.id, text='Siz hali kanalga qo‘shilmadingiz')
                 markup = telebot.types.InlineKeyboardMarkup()
                 markup.add(telebot.types.InlineKeyboardButton(text='Obunani tekshirish', callback_data='check'))
-                bot.send_message(call.message.chat.id, "Kanalga qo‘shiling:\n- @medstone_usmle", reply_markup=markup)
+                bot.send_message(call.message.chat.id, "Kanalga qo‘shiling:\n- @Endoland", reply_markup=markup)
     except Exception as e:
         bot.send_message(call.message.chat.id, "Xatolik yuz berdi")
         bot.send_message(OWNER_ID, f"Xatolik: {str(e)}")
