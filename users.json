@@ -1,13 +1,11 @@
 {
-  "referred": {},
-  "referby": {},
-  "checkin": {},
-  "DailyQuiz": {},
-  "balance": {},
-  "dollar_balance": {},
-  "withd": {},
-  "id": {},
-  "username": {},
-  "total": 0,
-  "refer": {}
+  "referred": {"725821571": 2},
+  "referby": {"12345": "725821571"},
+  "username": {"12345": "user123", "725821571": "ambassador1"},  // Yangi qo‘shildi
+  "balance": {"725821571": 10},
+  "dollar_balance": {"725821571": 5.0},
+  "withd": {"725821571": 0},
+  "id": {"725821571": 1},
+  "total": 2,
+  "refer": {"725821571": true}
 }
