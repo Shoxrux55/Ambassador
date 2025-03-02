@@ -14,6 +14,8 @@ CHANNELS = ["@Endoland"]
 Daily_bonus = 1
 Per_Refer = 1
 
+ADMIN_GROUP_USERNAME = "@endocrineqatnashchi"  # Replace with your admin group username
+
 # Log yozuvlari uchun ro'yxat
 log_messages = []
 
