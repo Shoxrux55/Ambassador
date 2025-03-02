@@ -247,6 +247,7 @@ def start(message):
             text='Obunani tekshirish', callback_data='check'))
         msg_start = """Tabriklayman! Siz marafon qatnashchisi bo'lishga yaqin qoldingiz..."""
         bot.send_message(user_id, msg_start, reply_markup=markup)
+        menu(user_id)  # Menu tugmalarini yuborish
     except Exception as e:
         bot.send_message(user_id, "Bu buyruqda xatolik bor, iltimos admin xatoni tuzatishini kuting")
         bot.send_message(OWNER_ID, f"Xatolik: {str(e)}")
