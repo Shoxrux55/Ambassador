@@ -336,7 +336,6 @@ def send_invite_link(user_id):
 
 @bot.message_handler(commands=['addstudent'])
 def add_student(message):
-    """Admin uchun yangi talaba qo‘shish"""
     if message.chat.id != OWNER_ID:
         bot.send_message(message.chat.id, "Bu buyruq faqat bot egasiga mavjud.")
         return
@@ -361,13 +360,15 @@ def add_student(message):
             return
         
         referrer = data['referby'].get(buyer_id, buyer_id)
-        if referrer == buyer_id or referrer not in data['dollar_balance']:
-            bot.send_message(message.chat.id, f"@{username} hech kim tomonidan taklif qilinmagan.")
+        # Faqat referrer dollar_balance'da yo'q bo'lsa xatolik qaytarilsin
+        if referrer not in data['dollar_balance']:
+            # Referrer uchun dollar_balance mavjud bo'lmasa, avtomatik qo'shamiz
+            data['dollar_balance'][referrer] = 0.0
+            save_users_data(data)
+            bot.send_message(message.chat.id, f"@{username} hech kim tomonidan taklif qilinmagan, lekin referrer uchun dollar_balance 0.0 sifatida yaratildi.")
             return
         
         referrer = str(referrer)
-        if referrer not in data['dollar_balance']:
-            data['dollar_balance'][referrer] = 0.0
         data['dollar_balance'][referrer] += 5.0
         save_users_data(data)
         
