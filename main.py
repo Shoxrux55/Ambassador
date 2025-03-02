@@ -126,8 +126,10 @@ def start(message):
         if user not in data['referby']:
             data['referby'][user] = referrer if referrer else user
             if referrer and referrer in data['referred']:
-                data['referred'][referrer] += 1
-                data['balance'][referrer] += Per_Refer
+                data['referred'][referrer] = data['referred'].get(referrer, 0) + 1
+                data['balance'][referrer] = data['balance'].get(referrer, 0) + Per_Refer
+                if referrer not in data['dollar_balance']:
+                    data['dollar_balance'][referrer] = 0.0
         if user not in data['checkin']:
             data['checkin'][user] = 0
         if user not in data['DailyQuiz']:
@@ -146,7 +148,7 @@ def start(message):
 
         markup = telebot.types.InlineKeyboardMarkup()
         markup.add(telebot.types.InlineKeyboardButton(
-            text='Marafon kanaliga qo‘shilish', url='https://t.me/Endoland'))
+            text='Marafon kanaliga qo‘shilish', url='https://t.me/medstone_usmle'))
         markup.add(telebot.types.InlineKeyboardButton(
             text='Obunani tekshirish', callback_data='check'))
         msg_start = """Tabriklayman! Siz marafon qatnashchisi bo'lishga yaqin qoldingiz..."""
