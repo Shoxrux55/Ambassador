@@ -14,6 +14,9 @@ CHANNELS = ["@Endoland"]
 Daily_bonus = 1
 Per_Refer = 1
 
+# Log yozuvlari uchun ro'yxat
+log_messages = []
+
 bot = telebot.TeleBot(BOT_TOKEN)
 app = Flask(__name__)
 
@@ -21,14 +24,16 @@ app = Flask(__name__)
 scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
 try:
     creds_json = json.loads(os.environ.get('GOOGLE_SHEETS_CREDENTIALS'))
+    app.logger.info("GOOGLE_SHEETS_CREDENTIALS successfully loaded")
     creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_json, scope)
     client = gspread.authorize(creds)
     sheet = client.open("Ambassador").sheet1  # Jadval nomini tasdiqlang
+    app.logger.info("Successfully connected to Google Sheets")
 except Exception as e:
     error_msg = f"Google Sheets ulanishda xatolik: {str(e)}"
     print(error_msg)
     app.logger.error(error_msg)
-    raise  # Xatolikni logga chiqarish uchun
+    raise
 
 @app.route('/')
 def hello_world():
