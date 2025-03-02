@@ -4,10 +4,10 @@ from flask import Flask, request
 
 # TOKEN DETAILS
 TOKEN = "Ball"
-BOT_TOKEN = "7611666697:AAH6aLkRF7jYBmvEWAHWnePLz6OEb_49VOI"
-PAYMENT_CHANNEL = "@medstone_usmle"  # Add payment channel here including the '@' sign
+BOT_TOKEN = "7580694173:AAERNuW1PATTh_LC_WyKahR2pmR052RDUjc"
+PAYMENT_CHANNEL = "@Endoland"  # Add payment channel here including the '@' sign
 OWNER_ID = 725821571  # Write owner's user id here, get it from @MissRose_Bot by /id
-CHANNELS = ["@medstone_usmle"]  # Add channels to be checked here in the format - ["Channel 1", "Channel 2"]
+CHANNELS = ["@Endoland"]  # Add channels to be checked here in the format - ["Channel 1", "Channel 2"]
 Daily_bonus = 1  # Put daily bonus amount here
 Per_Refer = 1  # Add per refer bonus here
 
