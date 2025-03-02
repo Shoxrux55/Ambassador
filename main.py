@@ -77,13 +77,22 @@ bonus = {}
 
 def menu(id):
     """Asosiy menyuni ko‘rsatadi"""
-    keyboard = telebot.types.ReplyKeyboardMarkup(True)
-    keyboard.row('🆔 Mening hisobim')
-    keyboard.row('🙌🏻 Maxsus linkim')
-    keyboard.row('🎁 Mening sovg\'am')
     if id == OWNER_ID:
-        keyboard.row('📊 Statistika', 'Talabalarni hisoblash')  # Yangi tugma qo‘shildi
-    bot.send_message(id, "Asosiy menyu👇", reply_markup=keyboard)
+        # Admin uchun inline keyboard
+        markup = telebot.types.InlineKeyboardMarkup()
+        markup.add(telebot.types.InlineKeyboardButton(text='🆔 Mening hisobim', callback_data='account'))
+        markup.add(telebot.types.InlineKeyboardButton(text='🙌🏻 Maxsus linkim', callback_data='ref_link'))
+        markup.add(telebot.types.InlineKeyboardButton(text='🎁 Mening sovg\'am', callback_data='gift'))
+        markup.add(telebot.types.InlineKeyboardButton(text='📊 Statistika', callback_data='stats'))
+        markup.add(telebot.types.InlineKeyboardButton(text='Talabalarni hisoblash', callback_data='calculate_students'))
+        bot.send_message(id, "Asosiy menyu👇", reply_markup=markup)
+    else:
+        # Oddiy foydalanuvchilar uchun ReplyKeyboard
+        keyboard = telebot.types.ReplyKeyboardMarkup(True)
+        keyboard.row('🆔 Mening hisobim')
+        keyboard.row('🙌🏻 Maxsus linkim')
+        keyboard.row('🎁 Mening sovg\'am')
+        bot.send_message(id, "Asosiy menyu👇", reply_markup=keyboard)
 
 def load_users_data():
     """Google Sheets’dan ma'lumotlarni yuklaydi"""
@@ -298,9 +307,9 @@ def contact(message):
         bot.send_message(message.chat.id, gift_message, reply_markup=inline_markup)
         menu(message.chat.id)
 
-@bot.callback_query_handler(func=lambda call: call.data in ['account', 'ref_link', 'gift', 'calculate_students'])
+@bot.callback_query_handler(func=lambda call: call.data in ['account', 'ref_link', 'gift', 'calculate_students', 'stats'])
 def account_or_ref_link_handler(call):
-    """Hisob, referal link, sovg‘a yoki talabalarni hisoblash so‘rovlarini boshqaradi"""
+    """Hisob, referal link, sovg‘a, statistika yoki talabalarni hisoblash so‘rovlarini boshqaradi"""
     try:
         user_id = call.message.chat.id
         data = load_users_data()
@@ -318,6 +327,9 @@ def account_or_ref_link_handler(call):
             send_invite_link(user_id)
         elif call.data == 'gift':
             send_gift_video(user_id)
+        elif call.data == 'stats' and user_id == OWNER_ID:
+            data = load_users_data()
+            bot.send_message(user_id, f"Jami foydalanuvchilar: {data['total']}")
         elif call.data == 'calculate_students':
             handle_calculate_students(call)
     except Exception as e:
@@ -414,13 +426,15 @@ def handle_calculate_students(call):
         if user_id != OWNER_ID:
             bot.answer_callback_query(callback_query_id=call.id, text="Bu funksiya faqat bot egasiga mavjud.")
             return
-        
+            
+        app.logger.info(f"Admin {user_id} pressed 'Talabalarni hisoblash' button")
         # Admin'dan username so'rash
         bot.send_message(user_id, "Iltimos, qo'shilgan talabaning username'ni kiriting (masalan, @username):")
         bot.register_next_step_handler(call.message, process_student_username)
     except Exception as e:
         bot.send_message(user_id, "Xatolik yuz berdi")
         bot.send_message(OWNER_ID, f"Xatolik handle_calculate_students’da: {str(e)}")
+        app.logger.error(f"Error in handle_calculate_students: {str(e)}")
 
 def process_student_username(message):
     try:
@@ -428,7 +442,8 @@ def process_student_username(message):
         if user_id != OWNER_ID:
             bot.send_message(user_id, "Bu funksiya faqat bot egasiga mavjud.")
             return
-        
+            
+        app.logger.info(f"Admin {user_id} entered username: {message.text}")
         username = message.text.replace('@', '')
         # /addstudent logikasini chaqirish
         mock_message = type('MockMessage', (), {'chat': type('Chat', (), {'id': user_id}), 'text': f'/addstudent @{username}'})()
@@ -436,6 +451,7 @@ def process_student_username(message):
     except Exception as e:
         bot.send_message(user_id, "Xatolik yuz berdi")
         bot.send_message(OWNER_ID, f"Xatolik process_student_username’da: {str(e)}")
+        app.logger.error(f"Error in process_student_username: {str(e)}")
 
 if __name__ == '__main__':
     import os
