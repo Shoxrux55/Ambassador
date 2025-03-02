@@ -1,8 +1,10 @@
 import json
 import telebot
 from flask import Flask, request
+import gspread
+from oauth2client.service_account import ServiceAccountCredentials
 
-# TOKEN DETAILS
+# Bot sozlamalari
 TOKEN = "Ball"
 BOT_TOKEN = "7580694173:AAERNuW1PATTh_LC_WyKahR2pmR052RDUjc"
 PAYMENT_CHANNEL = "@Endoland"
@@ -18,6 +20,15 @@ ADMIN_GROUP_USERNAME = "@endocrineqatnashchi"
 
 # Log yozuvlari uchun ro'yxat
 log_messages = []
+
+# Google Sheets sozlamalari
+scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
+# Agar Render’da environment variable ishlatmoqchi bo‘lsangiz, quyidagi kodni faollashtiring:
+# creds_json = json.loads(os.environ.get('GOOGLE_SHEETS_CREDENTIALS'))
+# creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_json, scope)
+creds = ServiceAccountCredentials.from_json_keyfile_name('credentials.json', scope)  # Mahalliy test uchun
+client = gspread.authorize(creds)
+sheet = client.open("Ambassador").sheet1  # "BotUsers" nomli jadval
 
 @app.route('/')
 def hello_world():
@@ -46,6 +57,7 @@ def get_logs():
 
 # Bot funksiyalari
 def check(id):
+    """Foydalanuvchi kanalga a'zo ekanligini tekshiradi"""
     for i in CHANNELS:
         check = bot.get_chat_member(i, id)
         if check.status != 'left':
@@ -57,6 +69,7 @@ def check(id):
 bonus = {}
 
 def menu(id):
+    """Asosiy menyuni ko‘rsatadi"""
     keyboard = telebot.types.ReplyKeyboardMarkup(True)
     keyboard.row('🆔 Mening hisobim')
     keyboard.row('🙌🏻 Maxsus linkim')
@@ -66,10 +79,52 @@ def menu(id):
     bot.send_message(id, "Asosiy menyu👇", reply_markup=keyboard)
 
 def load_users_data():
+    """Google Sheets’dan ma'lumotlarni yuklaydi"""
     try:
-        with open('users.json', 'r') as f:
-            return json.load(f)
-    except (FileNotFoundError, json.JSONDecodeError):
+        data = sheet.get_all_records()
+        if not data:
+            return {
+                "referred": {},
+                "referby": {},
+                "checkin": {},
+                "DailyQuiz": {},
+                "balance": {},
+                "dollar_balance": {},
+                "withd": {},
+                "id": {},
+                "username": {},
+                "total": 0,
+                "refer": {}
+            }
+        
+        result = {
+            "referred": {},
+            "referby": {},
+            "checkin": {},
+            "DailyQuiz": {},
+            "balance": {},
+            "dollar_balance": {},
+            "withd": {},
+            "id": {},
+            "username": {},
+            "total": int(sheet.cell(1, 2).value or 0),  # A1 da total saqlanadi
+            "refer": {}
+        }
+        for row in data:
+            user_id = str(row["user_id"])
+            result["referred"][user_id] = row.get("referred", 0)
+            result["referby"][user_id] = row.get("referby", user_id)
+            result["checkin"][user_id] = row.get("checkin", 0)
+            result["DailyQuiz"][user_id] = row.get("DailyQuiz", "0")
+            result["balance"][user_id] = row.get("balance", 0)
+            result["dollar_balance"][user_id] = row.get("dollar_balance", 0.0)
+            result["withd"][user_id] = row.get("withd", 0)
+            result["id"][user_id] = row.get("id", 0)
+            result["username"][user_id] = row.get("username", "Noma'lum")
+            result["refer"][user_id] = row.get("refer", False)
+        return result
+    except Exception as e:
+        print(f"Xatolik load_users_data’da: {e}")
         return {
             "referred": {},
             "referby": {},
@@ -79,20 +134,44 @@ def load_users_data():
             "dollar_balance": {},
             "withd": {},
             "id": {},
-            "username": {},  # Username’lar uchun yangi maydon
+            "username": {},
             "total": 0,
             "refer": {}
         }
 
 def save_users_data(data):
-    with open('users.json', 'w') as f:
-        json.dump(data, f)
+    """Ma'lumotlarni Google Sheets’ga saqlaydi"""
+    try:
+        sheet.clear()
+        headers = ["user_id", "referred", "referby", "checkin", "DailyQuiz", "balance", 
+                   "dollar_balance", "withd", "id", "username", "refer"]
+        sheet.append_row(headers)
+        for user_id in data["referred"].keys():
+            row = [
+                user_id,
+                data["referred"].get(user_id, 0),
+                data["referby"].get(user_id, user_id),
+                data["checkin"].get(user_id, 0),
+                data["DailyQuiz"].get(user_id, "0"),
+                data["balance"].get(user_id, 0),
+                data["dollar_balance"].get(user_id, 0.0),
+                data["withd"].get(user_id, 0),
+                data["id"].get(user_id, 0),
+                data["username"].get(user_id, "Noma'lum"),
+                data["refer"].get(user_id, False)
+            ]
+            sheet.append_row(row)
+        sheet.update_cell(1, 2, data["total"])
+    except Exception as e:
+        print(f"Xatolik save_users_data’da: {e}")
 
 def send_videos(user_id, video_file_ids):
+    """Foydalanuvchiga videolarni yuboradi"""
     for video_file_id in video_file_ids:
         bot.send_video(user_id, video_file_id, supports_streaming=True)
 
 def send_gift_video(user_id):
+    """Balansga qarab sovg‘a videolarini yuboradi"""
     data = load_users_data()
     balance = data['balance'].get(str(user_id), 0)
     if 0 <= balance < 10:
@@ -112,6 +191,7 @@ def send_gift_video(user_id):
 
 @bot.message_handler(commands=['start'])
 def start(message):
+    """Botni ishga tushiradi va foydalanuvchini ro‘yxatdan o‘tkazadi"""
     try:
         user_id = message.chat.id
         username = message.chat.username
@@ -157,6 +237,7 @@ def start(message):
 
 @bot.callback_query_handler(func=lambda call: True)
 def query_handler(call):
+    """Inline tugmalar bilan ishlash"""
     try:
         ch = check(call.message.chat.id)
         if call.data == 'check':
@@ -198,6 +279,7 @@ def query_handler(call):
 
 @bot.message_handler(content_types=['contact'])
 def contact(message):
+    """Foydalanuvchi telefon raqamini qabul qiladi"""
     if message.contact is not None:
         contact = message.contact.phone_number
         username = message.from_user.username
@@ -211,6 +293,7 @@ def contact(message):
 
 @bot.callback_query_handler(func=lambda call: call.data in ['account', 'ref_link', 'gift'])
 def account_or_ref_link_handler(call):
+    """Hisob, referal link yoki sovg‘a so‘rovlarini boshqaradi"""
     try:
         user_id = call.message.chat.id
         data = load_users_data()
@@ -233,6 +316,7 @@ def account_or_ref_link_handler(call):
         bot.send_message(OWNER_ID, f"Xatolik: {str(e)}")
 
 def send_invite_link(user_id):
+    """Foydalanuvchiga referal link yuboradi"""
     data = load_users_data()
     bot_name = bot.get_me().username
     user = str(user_id)
@@ -245,6 +329,7 @@ def send_invite_link(user_id):
 
 @bot.message_handler(commands=['addstudent'])
 def add_student(message):
+    """Admin uchun yangi talaba qo‘shish"""
     if message.chat.id != OWNER_ID:
         bot.send_message(message.chat.id, "Bu buyruq faqat bot egasiga mavjud.")
         return
@@ -286,6 +371,7 @@ def add_student(message):
 
 @bot.message_handler(content_types=['text'])
 def send_text(message):
+    """Matnli xabarlarni qayta ishlaydi"""
     try:
         if message.text == '🆔 Mening hisobim':
             data = load_users_data()
