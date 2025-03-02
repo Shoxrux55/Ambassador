@@ -1,13 +1,13 @@
 {
-  "referred": {},
-  "referby": {},
-  "checkin": {},
-  "DailyQuiz": {},
-  "balance": {},
-  "dollar_balance": {},
-  "withd": {},
-  "id": {},
-  "username": {},
-  "total": 0,
-  "refer": {}
-}
+            "referred": {},
+            "referby": {},
+            "checkin": {},
+            "DailyQuiz": {},
+            "balance": {},
+            "dollar_balance": {},
+            "withd": {},
+            "id": {},
+            "username": {},  # Username’lar uchun yangi maydon
+            "total": 0,
+            "refer": {}
+        }
