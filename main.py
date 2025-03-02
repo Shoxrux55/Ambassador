@@ -68,9 +68,14 @@ def menu(id):
 def load_users_data():
     try:
         with open('users.json', 'r') as f:
-            return json.load(f)
+            data = json.load(f)
+            # Agar maydonlar yo‘q bo‘lsa, qo‘shish
+            for key in ['referred', 'referby', 'checkin', 'DailyQuiz', 'balance', 'dollar_balance', 'withd', 'id', 'username', 'total', 'refer']:
+                if key not in data:
+                    data[key] = {} if key != 'total' else 0
+            return data
     except (FileNotFoundError, json.JSONDecodeError):
-        return {
+        default_data = {
             "referred": {},
             "referby": {},
             "checkin": {},
@@ -79,10 +84,12 @@ def load_users_data():
             "dollar_balance": {},
             "withd": {},
             "id": {},
-            "username": {},  # Username’lar uchun yangi maydon
+            "username": {},
             "total": 0,
             "refer": {}
         }
+        save_users_data(default_data)
+        return default_data
 
 def save_users_data(data):
     try:
