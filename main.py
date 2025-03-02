@@ -79,7 +79,7 @@ def menu(id):
     """Asosiy menyuni ko‘rsatadi"""
     if id == OWNER_ID:
         # Admin uchun ReplyKeyboardMarkup (pastda tugmalar)
-        keyboard = telebot.types.ReplyKeyboardMarkup(True, resize_keyboard=True)
+        keyboard = telebot.types.ReplyKeyboardMarkup(resize_keyboard=True)  # Faqat bitta resize_keyboard
         keyboard.row('🆔 Mening hisobim')
         keyboard.row('🙌🏻 Maxsus linkim')
         keyboard.row('🎁 Mening sovg\'am')
@@ -88,7 +88,7 @@ def menu(id):
         bot.send_message(id, "Asosiy menyu👇", reply_markup=keyboard)
     else:
         # Oddiy foydalanuvchilar uchun ReplyKeyboard (pastda tugmalar)
-        keyboard = telebot.types.ReplyKeyboardMarkup(True, resize_keyboard=True)
+        keyboard = telebot.types.ReplyKeyboardMarkup(resize_keyboard=True)  # Faqat bitta resize_keyboard
         keyboard.row('🆔 Mening hisobim')
         keyboard.row('🙌🏻 Maxsus linkim')
         keyboard.row('🎁 Mening sovg\'am')
@@ -281,7 +281,7 @@ def gift_or_check_handler(call):
                         bot.send_message(ref_id, f"Do'stingiz kanalga qo'shildi va siz +{Per_Refer} {TOKEN} ishlab oldingiz")
                     save_users_data(data)
 
-                markup = telebot.types.ReplyKeyboardMarkup(one_time_keyboard=True, resize_keyboard=True)
+                markup = telebot.types.ReplyKeyboardMarkup(resize_keyboard=True)  # To‘g‘ri sozlash
                 markup.add(telebot.types.KeyboardButton(text='Raqamni ulashish', request_contact=True))
                 bot.send_message(user_id, f"Salom, @{username}! \nRaqamingizni tasdiqlang:", reply_markup=markup)
             else:
