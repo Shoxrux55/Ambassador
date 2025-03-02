@@ -19,10 +19,16 @@ app = Flask(__name__)
 
 # Google Sheets sozlamalari
 scope = ["https://spreadsheets.google.com/feeds", "https://www.googleapis.com/auth/drive"]
-creds_json = json.loads(os.environ.get('GOOGLE_SHEETS_CREDENTIALS'))  # Render uchun
-creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_json, scope)
-client = gspread.authorize(creds)
-sheet = client.open("Ambassador").sheet1  # Jadval nomini to‘g‘rilang agar kerak bo‘lsa
+try:
+    creds_json = json.loads(os.environ.get('GOOGLE_SHEETS_CREDENTIALS'))
+    creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_json, scope)
+    client = gspread.authorize(creds)
+    sheet = client.open("Ambassador").sheet1  # Jadval nomini tasdiqlang
+except Exception as e:
+    error_msg = f"Google Sheets ulanishda xatolik: {str(e)}"
+    print(error_msg)
+    app.logger.error(error_msg)
+    raise  # Xatolikni logga chiqarish uchun
 
 @app.route('/')
 def hello_world():
