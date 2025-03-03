@@ -211,7 +211,7 @@ def send_gift_video(user_id):
 
 @bot.message_handler(commands=['start'])
 def start(message):
-    """Botni ishga tushiradi va foydalanuvchining kanalga a'zoligini tekshiradi, keyin telefon raqamini so'raydi"""
+    """Botni ishga tushiradi va foydalanuvchini ro‘yxatdan o‘tkazadi"""
     try:
         user_id = message.chat.id
         username = message.chat.username
@@ -220,7 +220,6 @@ def start(message):
         data = load_users_data()
         referrer = None if msg == '/start' else msg.split()[1]
 
-        # Foydalanuvchi ma'lumotlarini yangilash
         if user not in data['referred']:
             data['referred'][user] = 0
             data['total'] += 1
@@ -245,82 +244,57 @@ def start(message):
             data['username'][user] = username if username else "Noma’lum"
         save_users_data(data)
 
-        # Kanalga a'zolikni aniq tekshirish
-        ch = check(user_id)
-        if ch:
-            # Agar a'zo bo'lsa, telefon raqamini so'raymiz
-            markup = telebot.types.ReplyKeyboardMarkup(one_time_keyboard=True, resize_keyboard=True)
-            markup.add(telebot.types.KeyboardButton(text='Raqamni ulashish', request_contact=True))
-            msg_start = f"Salom, @{username}! \nSizga bonuslarimizni bera olishimiz uchun raqamingizni tasdiqlay olasizmi?\nPastdagi maxsus tugmani bossangiz kifoya."
-            bot.send_message(user_id, msg_start, reply_markup=markup)
-        else:
-            # Agar a'zo bo'lmasa, kanal havolasini yuboramiz
-            markup = telebot.types.InlineKeyboardMarkup()
-            markup.add(telebot.types.InlineKeyboardButton(
-                text='Kanalga qo‘shilish', url='https://t.me/Endoland'))
-            markup.add(telebot.types.InlineKeyboardButton(
-                text='Obunani tekshirish', callback_data='check'))
-            msg_start = """Siz marafon qatnashchisi bo'lish uchun kanalga qo'shilishingiz kerak!"""
-            bot.send_message(user_id, msg_start, reply_markup=markup)
+        markup = telebot.types.InlineKeyboardMarkup()
+        markup.add(telebot.types.InlineKeyboardButton(
+            text='Marafon kanaliga qo‘shilish', url='https://t.me/Endoland'))
+        markup.add(telebot.types.InlineKeyboardButton(
+            text='Obunani tekshirish', callback_data='check'))
+        msg_start = """Tabriklayman! Siz marafon qatnashchisi bo'lishga yaqin qoldingiz..."""
+        bot.send_message(user_id, msg_start, reply_markup=markup)
     except Exception as e:
         bot.send_message(user_id, "Bu buyruqda xatolik bor, iltimos admin xatoni tuzatishini kuting")
         bot.send_message(OWNER_ID, f"Xatolik: {str(e)}")
-        app.logger.error(f"Error in start: {str(e)}")
 
-@bot.callback_query_handler(func=lambda call: call.data == 'check')
+@bot.callback_query_handler(func=lambda call: True)
 def query_handler(call):
-    """Kanalga a'zolikni tekshirish uchun inline tugmalar bilan ishlash"""
+    """Inline tugmalar bilan ishlash"""
     try:
-        user_id = call.message.chat.id
-        ch = check(user_id)
-        app.logger.info(f"Checking subscription for user {user_id}: Is member = {ch}")
-        if ch:
-            data = load_users_data()
-            user = str(user_id)
-            username = call.message.chat.username
-            bot.answer_callback_query(callback_query_id=call.id, text='Siz kanalga qo‘shildingiz, omad tilaymiz')
+        ch = check(call.message.chat.id)
+        if call.data == 'check':
+            if ch:
+                data = load_users_data()
+                user_id = call.message.chat.id
+                user = str(user_id)
+                username = call.message.chat.username
+                bot.answer_callback_query(callback_query_id=call.id, text='Siz kanalga qo‘shildingiz, omad tilaymiz')
 
-            if user not in data['refer']:
-                data['refer'][user] = True
-                if user not in data['referby']:
-                    data['referby'][user] = user
-                if int(data['referby'][user]) != user_id:
-                    ref_id = data['referby'][user]
-                    ref = str(ref_id)
-                    if ref not in data['balance']:
-                        data['balance'][ref] = 0
-                    if ref not in data['referred']:
-                        data['referred'][ref] = 0
-                    data['balance'][ref] += Per_Refer
-                    data['referred'][ref] += 1
-                    bot.send_message(ref_id, f"Do'stingiz kanalga qo'shildi va siz +{Per_Refer} {TOKEN} ishlab oldingiz")
-                save_users_data(data)
+                if user not in data['refer']:
+                    data['refer'][user] = True
+                    if user not in data['referby']:
+                        data['referby'][user] = user
+                    if int(data['referby'][user]) != user_id:
+                        ref_id = data['referby'][user]
+                        ref = str(ref_id)
+                        if ref not in data['balance']:
+                            data['balance'][ref] = 0
+                        if ref not in data['referred']:
+                            data['referred'][ref] = 0
+                        data['balance'][ref] += Per_Refer
+                        data['referred'][ref] += 1
+                        bot.send_message(ref_id, f"Do'stingiz kanalga qo'shildi va siz +{Per_Refer} {TOKEN} ishlab oldingiz")
+                    save_users_data(data)
 
-            # Telefon raqamini so'rash (asosiy menyu ochilmaydi)
-            markup = telebot.types.ReplyKeyboardMarkup(one_time_keyboard=True, resize_keyboard=True)
-            markup.add(telebot.types.KeyboardButton(text='Raqamni ulashish', request_contact=True))
-            bot.send_message(user_id, f"Salom, @{username}! \nSizga bonuslarimizni bera olishimiz uchun raqamingizni tasdiqlay olasizmi?\nPastdagi maxsus tugmani bossangiz kifoya.", reply_markup=markup)
-        else:
-            bot.answer_callback_query(callback_query_id=call.id, text='Siz hali kanalga qo‘shilmadingiz')
-            markup = telebot.types.InlineKeyboardMarkup()
-            markup.add(telebot.types.InlineKeyboardButton(
-                text='Kanalga qo‘shilish', url='https://t.me/Endoland'))
-            markup.add(telebot.types.InlineKeyboardButton(
-                text='Obunani tekshirish', callback_data='check'))
-            bot.send_message(user_id, "Kanalga qo‘shiling:\n- @Endoland", reply_markup=markup)
+                markup = telebot.types.ReplyKeyboardMarkup(one_time_keyboard=True, resize_keyboard=True)
+                markup.add(telebot.types.KeyboardButton(text='Raqamni ulashish', request_contact=True))
+                bot.send_message(user_id, f"Salom, @{username}! \nRaqamingizni tasdiqlang:", reply_markup=markup)
+            else:
+                bot.answer_callback_query(callback_query_id=call.id, text='Siz hali kanalga qo‘shilmadingiz')
+                markup = telebot.types.InlineKeyboardMarkup()
+                markup.add(telebot.types.InlineKeyboardButton(
+                    text='Obunani tekshirish', callback_data='check'))
+                bot.send_message(call.message.chat.id, "Kanalga qo‘shiling:\n- @Endoland", reply_markup=markup)
     except Exception as e:
-        bot.send_message(user_id, "Xatolik yuz berdi")
-        bot.send_message(OWNER_ID, f"Xatolik: {str(e)}")
-        app.logger.error(f"Error in query_handler: {str(e)}")
-
-@bot.callback_query_handler(func=lambda call: call.data == 'gift')
-def gift_handler(call):
-    """Gift uchun inline tugmalar bilan ishlash"""
-    try:
-        user_id = call.message.chat.id
-        send_gift_video(user_id)
-    except Exception as e:
-        bot.send_message(user_id, "Xatolik yuz berdi")
+        bot.send_message(call.message.chat.id, "Xatolik yuz berdi")
         bot.send_message(OWNER_ID, f"Xatolik: {str(e)}")
 
 @bot.message_handler(content_types=['contact'])
