@@ -265,6 +265,7 @@ def start(message):
     except Exception as e:
         bot.send_message(user_id, "Bu buyruqda xatolik bor, iltimos admin xatoni tuzatishini kuting")
         bot.send_message(OWNER_ID, f"Xatolik: {str(e)}")
+        app.logger.error(f"Error in start: {str(e)}")
 
 @bot.callback_query_handler(func=lambda call: call.data == 'check')
 def query_handler(call):
