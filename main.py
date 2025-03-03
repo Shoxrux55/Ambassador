@@ -65,11 +65,15 @@ def get_logs():
 # Bot funksiyalari
 def check(id):
     """Foydalanuvchi kanalga a'zo ekanligini tekshiradi"""
+    app.logger.info(f"Checking membership for user {id} in channels: {CHANNELS}")
     for i in CHANNELS:
-        check = bot.get_chat_member(i, id)
-        if check.status != 'left':
-            pass
-        else:
+        try:
+            check = bot.get_chat_member(i, id)
+            app.logger.info(f"Channel {i} membership status for user {id}: {check.status}")
+            if check.status == 'left':
+                return False
+        except Exception as e:
+            app.logger.error(f"Error checking membership in channel {i} for user {id}: {str(e)}")
             return False
     return True
 
@@ -241,7 +245,7 @@ def start(message):
             data['username'][user] = username if username else "Noma’lum"
         save_users_data(data)
 
-        # Kanalga a'zolikni tekshirish
+        # Kanalga a'zolikni aniq tekshirish
         ch = check(user_id)
         if ch:
             # Agar a'zo bo'lsa, telefon raqamini so'raymiz
@@ -268,6 +272,7 @@ def query_handler(call):
     try:
         user_id = call.message.chat.id
         ch = check(user_id)
+        app.logger.info(f"Checking subscription for user {user_id}: Is member = {ch}")
         if ch:
             data = load_users_data()
             user = str(user_id)
@@ -305,6 +310,7 @@ def query_handler(call):
     except Exception as e:
         bot.send_message(user_id, "Xatolik yuz berdi")
         bot.send_message(OWNER_ID, f"Xatolik: {str(e)}")
+        app.logger.error(f"Error in query_handler: {str(e)}")
 
 @bot.callback_query_handler(func=lambda call: call.data == 'gift')
 def gift_handler(call):
