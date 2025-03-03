@@ -14,7 +14,7 @@ CHANNELS = ["@Endoland"]
 Daily_bonus = 1
 Per_Refer = 1
 
-ADMIN_GROUP_USERNAME = "@endocrineqatnashchi"  # Replace with your admin group username
+ADMIN_GROUP_USERNAME = "@endocrineqatnashchi"
 
 # Log yozuvlari uchun ro'yxat
 log_messages = []
@@ -29,7 +29,7 @@ try:
     app.logger.info("GOOGLE_SHEETS_CREDENTIALS successfully loaded")
     creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_json, scope)
     client = gspread.authorize(creds)
-    sheet = client.open("Ambassador").sheet1  # Jadval nomini tasdiqlang
+    sheet = client.open("Ambassador").sheet1
     app.logger.info("Successfully connected to Google Sheets")
 except Exception as e:
     error_msg = f"Google Sheets ulanishda xatolik: {str(e)}"
@@ -64,7 +64,6 @@ def get_logs():
 
 # Bot funksiyalari
 def check(id):
-    """Foydalanuvchi kanalga a'zo ekanligini tekshiradi"""
     app.logger.info(f"Checking membership for user {id} in channels: {CHANNELS}")
     for i in CHANNELS:
         try:
@@ -80,26 +79,20 @@ def check(id):
 bonus = {}
 
 def menu(id):
-    """Asosiy menyuni ko‘rsatadi"""
     if id == OWNER_ID:
-        # Admin uchun ReplyKeyboardMarkup (pastda tugmalar)
         keyboard = telebot.types.ReplyKeyboardMarkup(resize_keyboard=True)
         keyboard.row('🆔 Mening hisobim')
         keyboard.row('🙌🏻 Maxsus linkim')
-        keyboard.row('🎁 Mening sovg\'am')
         keyboard.row('📊 Statistika')
-        keyboard.row('Talabalarni hisoblash')  # Yangi tugma qo‘shildi
+        keyboard.row('Talabalarni hisoblash')
         bot.send_message(id, "Asosiy menyu👇", reply_markup=keyboard)
     else:
-        # Oddiy foydalanuvchilar uchun ReplyKeyboard (pastda tugmalar)
         keyboard = telebot.types.ReplyKeyboardMarkup(resize_keyboard=True)
         keyboard.row('🆔 Mening hisobim')
         keyboard.row('🙌🏻 Maxsus linkim')
-        keyboard.row('🎁 Mening sovg\'am')
         bot.send_message(id, "Asosiy menyu👇", reply_markup=keyboard)
 
 def load_users_data():
-    """Google Sheets’dan ma'lumotlarni yuklaydi"""
     try:
         data = sheet.get_all_records()
         if not data:
@@ -127,7 +120,7 @@ def load_users_data():
             "withd": {},
             "id": {},
             "username": {},
-            "total": int(sheet.cell(1, 2).value or 0),  # A1 da total saqlanadi
+            "total": int(sheet.cell(1, 2).value or 0),
             "refer": {}
         }
         for row in data:
@@ -160,7 +153,6 @@ def load_users_data():
         }
 
 def save_users_data(data):
-    """Ma'lumotlarni Google Sheets’ga saqlaydi"""
     try:
         sheet.clear()
         headers = ["user_id", "referred", "referby", "checkin", "DailyQuiz", "balance", 
@@ -185,33 +177,8 @@ def save_users_data(data):
     except Exception as e:
         print(f"Xatolik save_users_data’da: {e}")
 
-def send_videos(user_id, video_file_ids):
-    """Foydalanuvchiga videolarni yuboradi"""
-    for video_file_id in video_file_ids:
-        bot.send_video(user_id, video_file_id, supports_streaming=True)
-
-def send_gift_video(user_id):
-    """Balansga qarab sovg‘a videolarini yuboradi"""
-    data = load_users_data()
-    balance = data['balance'].get(str(user_id), 0)
-    if 0 <= balance < 10:
-        video_file_ids = ["https://t.me/marafonbotbazasi/7"]
-        send_videos(user_id, video_file_ids)
-        bot.send_message(user_id, '1-dars video sizga jo‘natildi.')
-    elif 10 <= balance < 20:
-        video_file_ids = ["https://t.me/marafonbotbazasi/7", "https://t.me/marafonbotbazasi/8"]
-        send_videos(user_id, video_file_ids)
-        bot.send_message(user_id, '1-dars va 2-dars videolar sizga jo‘natildi.')
-    elif balance >= 20:
-        video_file_ids = ["https://t.me/marafonbotbazasi/7", "https://t.me/marafonbotbazasi/8", "https://t.me/marafonbotbazasi/9"]
-        send_videos(user_id, video_file_ids)
-        bot.send_message(user_id, '1-dars, 2-dars, va 3-dars videolar sizga jo‘natildi.')
-    else:
-        bot.send_message(user_id, 'Kechirasiz, ballaringiz yetarli emas.')
-
 @bot.message_handler(commands=['start'])
 def start(message):
-    """Botni ishga tushiradi va foydalanuvchini ro‘yxatdan o‘tkazadi"""
     try:
         user_id = message.chat.id
         username = message.chat.username
@@ -257,7 +224,6 @@ def start(message):
 
 @bot.callback_query_handler(func=lambda call: True)
 def query_handler(call):
-    """Inline tugmalar bilan ishlash"""
     try:
         ch = check(call.message.chat.id)
         if call.data == 'check':
@@ -299,38 +265,22 @@ def query_handler(call):
 
 @bot.message_handler(content_types=['contact'])
 def contact(message):
-    """Foydalanuvchi telefon raqamini qabul qiladi"""
     if message.contact is not None:
         contact = message.contact.phone_number
         username = message.from_user.username
         bot.send_message(ADMIN_GROUP_USERNAME, f"Foydalanuvchi: @{username}\nTelefon raqami: {contact}")
 
-        # Xabar va inline tugma (sovg'a uchun)
-        inline_markup = telebot.types.InlineKeyboardMarkup()
-        inline_markup.add(telebot.types.InlineKeyboardButton(text="Sovg'angiz👇", callback_data='gift'))
-        gift_message = """Siz uchun tayyorlab qo'ygan sovg'alarimizni kutib oling🤗
-
-1️⃣. Kanalimizning yangi mehmonlari uchun Shoxrux Botirov tomonidan maxsus tayyorlangan bonus video darsni raqamingizni tasdiqlash orqali qabul qilib oling
-Uni pastdagi "Raqamni ulashish📞 va Mening sovgʻam🎁" tugmasini bosish orqali olishingiz mumkin.
-
-2️⃣. Bor yo'g'i 10 ta odam qo'shish orqali avval 650 mingdan sotilgan leksiyalar to'plamiga mansub 1 ta dolzarb mavzu leksiyasini BEPUL olish imkoniyati
-
-3️⃣. 20 ta odam qo'shish orqali avval 650 mingdan sotilgan leksiyalar to'plamiga mansub 2 ta video darsni case tahlillari bilan birga BEPUL olish imkoniyati.
-
-4️⃣. 30 ta odam qo'shish orqali yuqoridagi pullik kanalga tegishli 3 ta darsni batafsil case tahlillari bilan BEPUL qo'lga kiritish imkoniyati.
-
-Taklif qilish uchun maxsus linkingizni oling va do'stlaringizni jamoamizga taklif qiling.
+        gift_message = """Taklif qilish uchun maxsus linkingizni oling va do'stlaringizni jamoamizga taklif qiling.
 Sizning maxsus linkingiz bu faqat sizga tegishli havola bo'lib, u orqali kanalga qo'shilgan har bir doʻstingiz sizga 1️⃣ ball olib keladi.
 
 Maxsus linkingizni olish uchun pastdagi "Maxsus linkim" tugmasini bosing.
 
 Ballaringizni ko'rish uchun pastdagi "Mening hisobim" tugmasini bosing"""
-        bot.send_message(message.chat.id, gift_message, reply_markup=inline_markup)
-        menu(message.chat.id)  # Asosiy menyu (ReplyKeyboard) ochiladi
+        bot.send_message(message.chat.id, gift_message)
+        menu(message.chat.id)
 
 @bot.message_handler(content_types=['text'])
 def send_text(message):
-    """Matnli xabarlarni qayta ishlaydi"""
     try:
         user_id = message.chat.id
         if message.text == '🆔 Mening hisobim':
@@ -344,8 +294,6 @@ def send_text(message):
             bot.send_message(user_id, msg, reply_markup=markup)
         elif message.text == '🙌🏻 Maxsus linkim':
             send_invite_link(user_id)
-        elif message.text == '🎁 Mening sovg\'am':
-            send_gift_video(user_id)
         elif message.text == "📊 Statistika" and user_id == OWNER_ID:
             data = load_users_data()
             bot.send_message(user_id, f"Jami foydalanuvchilar: {data['total']}")
@@ -357,7 +305,6 @@ def send_text(message):
         bot.send_message(OWNER_ID, f"Xatolik: {str(e)}")
 
 def send_invite_link(user_id):
-    """Foydalanuvchiga referal link yuboradi"""
     data = load_users_data()
     bot_name = bot.get_me().username
     user = str(user_id)
@@ -375,7 +322,6 @@ def add_student(message):
         return
     
     try:
-        # Message text dan username olish
         args = message.text.split()
         if len(args) != 2:
             bot.send_message(message.chat.id, "To‘g‘ri format: /addstudent @username")
@@ -394,16 +340,13 @@ def add_student(message):
             bot.send_message(message.chat.id, f"@{username} botda topilmadi.")
             return
         
-        # Referrer'ni olish va tekshirish
         referrer = data['referby'].get(str(buyer_id), str(buyer_id))
         app.logger.info(f"Checking addstudent for @{username}: buyer_id={buyer_id}, referrer={referrer}")
         
-        # Dollar_balance mavjudligini tekshirish va avtomatik yaratish
         if str(referrer) not in data['dollar_balance']:
             data['dollar_balance'][str(referrer)] = 0.0
             app.logger.info(f"Created dollar_balance for referrer {referrer} with value 0.0")
         
-        # Referrer dollar_balance'da mavjud bo'lsa, +5$ qo'shamiz
         referrer = str(referrer)
         data['dollar_balance'][referrer] += 5.0
         save_users_data(data)
@@ -423,7 +366,6 @@ def handle_calculate_students(call):
             return
             
         app.logger.info(f"Admin {user_id} pressed 'Talabalarni hisoblash' button")
-        # Admin'dan username so'rash
         bot.send_message(user_id, "Iltimos, qo'shilgan talabaning username'ni kiriting (masalan, @username):")
         bot.register_next_step_handler(call.message, process_student_username)
     except Exception as e:
@@ -440,7 +382,6 @@ def process_student_username(message):
             
         app.logger.info(f"Admin {user_id} entered username: {message.text}")
         username = message.text.replace('@', '')
-        # /addstudent logikasini chaqirish
         mock_message = type('MockMessage', (), {'chat': type('Chat', (), {'id': user_id}), 'text': f'/addstudent @{username}'})()
         add_student(mock_message)
     except Exception as e:
