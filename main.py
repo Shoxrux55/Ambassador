@@ -295,7 +295,7 @@ def query_handler(call):
                     bot.send_message(ref_id, f"Do'stingiz kanalga qo'shildi va siz +{Per_Refer} {TOKEN} ishlab oldingiz")
                 save_users_data(data)
 
-            # Telefon raqamini so'rash
+            # Telefon raqamini so'rash (asosiy menyu ochilmaydi)
             markup = telebot.types.ReplyKeyboardMarkup(one_time_keyboard=True, resize_keyboard=True)
             markup.add(telebot.types.KeyboardButton(text='Raqamni ulashish', request_contact=True))
             bot.send_message(user_id, f"Salom, @{username}! \nSizga bonuslarimizni bera olishimiz uchun raqamingizni tasdiqlay olasizmi?\nPastdagi maxsus tugmani bossangiz kifoya.", reply_markup=markup)
